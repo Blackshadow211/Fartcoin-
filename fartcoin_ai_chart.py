@@ -26,7 +26,7 @@ def generate_signal():
 def send_email_alert(signal, confidence, hold_time):
     sender_email = "Remixbooster2@gmail.com"
     receiver_email = "Remixbooster2@gmail.com"
-    app_password = "YOUR_16_DIGIT_APP_PASSWORD"
+    app_password = "xjlrszqzjtmvprfo"
 
     subject = f"Fartcoin AI Signal: {signal}"
     body = f"""

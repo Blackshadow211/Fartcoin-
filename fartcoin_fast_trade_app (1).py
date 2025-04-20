@@ -4,24 +4,48 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from datetime import datetime
 from fartcoin_ai_chart import generate_signals, fetch_fartcoin_data
-from sendgrid_emailer import send_email_alert
+import smtplib
+from email.mime.text import MIMEText
 
-# Load and process Fartcoin data
-df = fetch_fartcoin_data()
-df = generate_signals(df)
+# CONFIG
+THRESHOLD_BUY = -0.03
+THRESHOLD_SELL = 0.03
+EMAIL_ADDRESS = "your_email@gmail.com"
+EMAIL_PASSWORD = "your_app_password"
+TO_EMAIL = "recipient_email@gmail.com"
 
-# Plotting
+# FUNCTION TO FETCH AND PROCESS DATA
+def send_email_alert(signal, price, date):
+    try:
+        msg = MIMEText(f"{signal} signal at ${price} on {date.strftime('%Y-%m-%d')}")
+        msg['Subject'] = f"Fartcoin Alert: {signal}"
+        msg['From'] = EMAIL_ADDRESS
+        msg['To'] = TO_EMAIL
+
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+            server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
+            server.send_message(msg)
+        return True
+    except Exception as e:
+        print("Email failed:", e)
+        return False
+
+# APP UI
 st.title("Fartcoin AI Trading Signal (Fast Trades Only)")
 st.subheader("Fartcoin Price Chart with Buy/Sell Signals")
 
+data = fetch_fartcoin_data()
+df = generate_signals(data, threshold_buy=THRESHOLD_BUY, threshold_sell=THRESHOLD_SELL)
+
+# PLOT
 fig, ax = plt.subplots()
-ax.plot(df['Date'], df['Price'], label='Price', color='gray', marker='o')
+ax.plot(df['Date'], df['Price'], label='Price', color='gray')
 
 # Add buy/sell markers
 buy_signals = df[df['Signal'] == 'Buy']
 sell_signals = df[df['Signal'] == 'Sell']
-ax.scatter(buy_signals['Date'], buy_signals['Buy_Price'], marker='^', color='green', label='Buy', s=100)
-ax.scatter(sell_signals['Date'], sell_signals['Sell_Price'], marker='v', color='red', label='Sell', s=100)
+ax.scatter(buy_signals['Date'], buy_signals['Buy_Price'], marker='^', color='green', label='Buy')
+ax.scatter(sell_signals['Date'], sell_signals['Sell_Price'], marker='v', color='red', label='Sell')
 
 ax.set_title("Fartcoin Price & Signals")
 ax.set_xlabel("Date")
@@ -29,25 +53,21 @@ ax.set_ylabel("Price (USD)")
 ax.legend()
 st.pyplot(fig)
 
-# Show last signal and send email
+# SHOW LAST SIGNAL + EMAIL
 last_signal = df[df['Signal'] != ''].tail(1)
-
 if not last_signal.empty:
     signal_type = last_signal['Signal'].values[0]
     price = last_signal['Price'].values[0]
     signal_date = last_signal['Date'].values[0]
 
-    if signal_date is not None:
-        st.success(f"Last Signal: {signal_type} at ${price} on {signal_date.strftime('%Y-%m-%d')}")
-        email_sent = send_email_alert(signal_type, price, signal_date)
-        if email_sent:
-            st.info("Email alert sent.")
-        else:
-            st.warning("Failed to send email alert.")
+    st.success(f"Last Signal: {signal_type} at ${price} on {signal_date.strftime('%Y-%m-%d')}")
+    email_sent = send_email_alert(signal_type, price, signal_date)
+    if email_sent:
+        st.info("Email alert sent.")
     else:
-        st.warning("No valid trade signal date.")
+        st.warning("Failed to send email alert.")
 else:
     st.warning("No good trade opportunity within 1 day.")
 
-# Auto refresh
+# AUTO REFRESH
 st.experimental_rerun()

@@ -9,9 +9,9 @@ import smtplib
 from email.mime.text import MIMEText
 
 # Email configuration (edit these if needed)
-EMAIL_ADDRESS = "your_email@gmail.com"
-EMAIL_PASSWORD = "your_app_password"
-TO_EMAIL = "your_email@gmail.com"
+EMAIL_ADDRESS = "remixbooster2@gmail.com"
+EMAIL_PASSWORD = "xjlrszqzjtmvprfo"
+TO_EMAIL = "remixbooster2@gmail.com"
 
 def send_email_alert(signal, price, date):
     try:

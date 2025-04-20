@@ -10,9 +10,9 @@ from email.mime.text import MIMEText
 # CONFIG
 THRESHOLD_BUY = -0.03
 THRESHOLD_SELL = 0.03
-EMAIL_ADDRESS = "your_email@gmail.com"
-EMAIL_PASSWORD = "your_app_password"
-TO_EMAIL = "recipient_email@gmail.com"
+EMAIL_ADDRESS = "remixbooster2@gmail.com"
+EMAIL_PASSWORD = "xjlrszqzjtmvprfo"
+TO_EMAIL = "mueedkamran1@gmail.com"
 
 # FUNCTION TO FETCH AND PROCESS DATA
 def send_email_alert(signal, price, date):

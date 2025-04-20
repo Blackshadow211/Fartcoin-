@@ -1,82 +1,51 @@
 
-import streamlit as st
 import pandas as pd
 import numpy as np
-import random
 import matplotlib.pyplot as plt
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+import requests
+from datetime import datetime
 
-# Mock Fartcoin price data and signals
-def get_price_data():
-    dates = pd.date_range(end=pd.Timestamp.today(), periods=10)
-    prices = np.random.uniform(low=0.8, high=1.2, size=10).round(4)
-    signals = [random.choice(['Hold', 'Buy', 'Sell']) for _ in range(10)]
-    return pd.DataFrame({'Date': dates, 'Price': prices, 'Signal': signals})
+def fetch_fartcoin_data(limit=100):
+    url = "https://api.mexc.com/api/v3/klines?symbol=FARTUSDT&interval=1h&limit=" + str(limit)
+    response = requests.get(url)
+    data = response.json()
+    df = pd.DataFrame(data, columns=[
+        'timestamp', 'open', 'high', 'low', 'close', 'volume',
+        'close_time', 'quote_asset_volume', 'num_trades',
+        'taker_buy_base_volume', 'taker_buy_quote_volume', 'ignore'
+    ])
+    df['Date'] = pd.to_datetime(df['timestamp'], unit='ms')
+    df['Price'] = df['close'].astype(float)
+    return df[['Date', 'Price']]
 
-# Mock AI signal generator
-def generate_signal():
-    signal = random.choice(["Buy", "Sell", "Hold"])
-    confidence = round(random.uniform(0.6, 0.95), 2)
-    hold_time = round(random.uniform(0.5, 3.0), 1)
-    return signal, confidence, hold_time
+def generate_signals(df):
+    df['Signal'] = ''
+    df['Buy_Price'] = np.nan
+    df['Sell_Price'] = np.nan
 
-# Email alert function
-def send_email_alert(signal, confidence, hold_time):
-    sender_email = "Remixbooster2@gmail.com"
-    receiver_email = "Remixbooster2@gmail.com"
-    app_password = "xjlrszqzjtmvprfo"
+    for i in range(2, len(df)-1):
+        # Simple logic: Buy if current price is less than previous two and next price is higher (local min)
+        if df['Price'][i] < df['Price'][i-1] and df['Price'][i] < df['Price'][i-2] and df['Price'][i] < df['Price'][i+1]:
+            df.at[i, 'Signal'] = 'Buy'
+            df.at[i, 'Buy_Price'] = df['Price'][i]
+        # Sell if current price is higher than previous two and next price is lower (local max)
+        elif df['Price'][i] > df['Price'][i-1] and df['Price'][i] > df['Price'][i-2] and df['Price'][i] > df['Price'][i+1]:
+            df.at[i, 'Signal'] = 'Sell'
+            df.at[i, 'Sell_Price'] = df['Price'][i]
+    return df
 
-    subject = f"Fartcoin AI Signal: {signal}"
-    body = f"""
-    Signal: {signal}
-    Confidence: {confidence * 100:.1f}%
-    Estimated hold time: {hold_time:.1f} days
-    """
-    
-    msg = MIMEMultipart()
-    msg['From'] = sender_email
-    msg['To'] = receiver_email
-    msg['Subject'] = subject
-    msg.attach(MIMEText(body, 'plain'))
+def plot_chart(df):
+    fig, ax = plt.subplots(figsize=(10, 4))
+    ax.plot(df['Date'], df['Price'], label='Price', color='gray', marker='o')
 
-    try:
-        server = smtplib.SMTP("smtp.gmail.com", 587)
-        server.starttls()
-        server.login(sender_email, app_password)
-        server.sendmail(sender_email, receiver_email, msg.as_string())
-        server.quit()
-        print("Email sent successfully.")
-    except Exception as e:
-        print("Failed to send email:", e)
+    buy_signals = df[df['Signal'] == 'Buy']
+    sell_signals = df[df['Signal'] == 'Sell']
 
-# Streamlit UI
-st.title("Fartcoin AI Trading Signal (Fast Trades Only)")
+    ax.scatter(buy_signals['Date'], buy_signals['Buy_Price'], label='Buy', marker='^', color='green', s=100)
+    ax.scatter(sell_signals['Date'], sell_signals['Sell_Price'], label='Sell', marker='v', color='red', s=100)
 
-# Show chart with historical signals
-df = get_price_data()
-st.subheader("Fartcoin Price Chart with Buy/Sell Signals")
-fig, ax = plt.subplots(figsize=(10, 4))
-ax.plot(df['Date'], df['Price'], label='Price', color='gray', linewidth=2)
-buy_signals = df[df['Signal'] == 'Buy']
-sell_signals = df[df['Signal'] == 'Sell']
-ax.scatter(buy_signals['Date'], buy_signals['Price'], color='green', marker='^', s=100, label='Buy')
-ax.scatter(sell_signals['Date'], sell_signals['Price'], color='red', marker='v', s=100, label='Sell')
-ax.set_xlabel("Date")
-ax.set_ylabel("Price (USD)")
-ax.set_title("Fartcoin Price & Signals")
-ax.legend()
-ax.grid(True)
-fig.autofmt_xdate()
-st.pyplot(fig)
-
-# Run signal prediction
-signal, confidence, hold_time = generate_signal()
-if hold_time <= 1 and signal in ["Buy", "Sell"]:
-    st.success(f"AI Signal: {signal}")
-    st.write(f"Confidence: {confidence * 100:.1f}%")
-    st.write(f"Estimated hold time: {hold_time:.1f} days")
-    send_email_alert(signal, confidence, hold_time)
-else:
-    st.warning("No good trade opportunity within 1 day.")
+    ax.set_title("Fartcoin Price & Signals")
+    ax.set_xlabel("Date")
+    ax.set_ylabel("Price (USD)")
+    ax.legend()
+    return fig

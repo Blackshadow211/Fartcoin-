@@ -87,8 +87,16 @@ if not last_signal.empty:
     signal_type = last_signal['Signal'].values[0]
     price = last_signal['Price'].values[0]
     signal_date = last_signal['Date'].values[0]
+    if signal_date is not None:
     st.success(f"Last Signal: {signal_type} at ${price} on {signal_date.strftime('%Y-%m-%d')}")
     email_sent = send_email_alert(signal_type, price, signal_date)
+    if email_sent:
+        st.info("Email alert sent.")
+    else:
+        st.warning("Failed to send email alert.")
+else:
+    st.warning("No valid trade signal date.")
+
     if email_sent:
         st.info("Email alert sent.")
     else:

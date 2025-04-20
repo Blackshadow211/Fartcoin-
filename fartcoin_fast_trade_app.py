@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 # EMAIL CONFIGURATION
 SENDER_EMAIL = "your_email@gmail.com"
 RECEIVER_EMAIL = "your_email@gmail.com"
-APP_PASSWORD = "your_16_digit_app_password"
+APP_PASSWORD = "xjlrszqzjtmvprfo"
 
 # FAKE LIVE DATA FETCH (replace with MEXC API integration for real prices)
 def fetch_price_data():

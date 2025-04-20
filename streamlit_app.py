@@ -8,7 +8,7 @@ from email.mime.multipart import MIMEMultipart
 def send_email_alert(signal, confidence, hold_time):
     sender_email = "Remixbooster2@gmail.com"  # <-- Replace with your Gmail
     receiver_email = "Remixbooster2@gmail.com"  # <-- Replace with your Gmail
-    app_password = "xjIr szqz jtmv prfo"  # <-- Replace with your App Password
+    app_password = "xjIrszqzjtmvprfo"  # <-- Replace with your App Password
 
     subject = f"Fartcoin Signal: {signal}"
     body = f"""AI Signal: {signal}
